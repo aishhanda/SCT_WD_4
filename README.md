@@ -28,9 +28,4 @@ The application allows users to create, manage, and organize tasks efficiently w
 ---
 
 ## 📸 Screenshots
-
-_Add screenshots of the task list, filters, and completed tasks here._
-
-Example:
-```markdown
 ![To-Do App](https://github.com/aishhanda/SCT_WD_4/blob/main/screencapture-file-C-Users-gurit-OneDrive-Desktop-VS-Code-Projects-skillcraft-to-do-web-page-index-html-2026-02-21-18_41_55.png)
