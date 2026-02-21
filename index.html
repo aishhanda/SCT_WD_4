@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>To-Do App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+*{
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0f172a, #0ea5a4);
+}
+
+.app{
+  background:white;
+  width:720px;
+  max-width:95%;
+  border-radius:18px;
+  padding:24px;
+  box-shadow:0 20px 40px rgba(0,0,0,.25);
+}
+
+h1{margin-top:0;text-align:center}
+
+
+
+.input-row {
+  display: grid;
+  grid-template-columns: 1fr 180px 140px;
+  gap: 10px;
+}
+
+input, button, select {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+.add-btn {
+  background: #2563eb;
+  color: white;
+}
+
+
+
+.filters {
+  margin: 15px 0;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  background: #e5e7eb;
+  transition: 0.2s;
+}
+
+.filter-btn.active {
+  background: #2563eb;
+  color: white;
+}
+
+
+
+.list {
+  margin-top: 10px;
+  display: grid;
+  gap: 10px;
+  max-height: 420px;
+  overflow: auto;
+}
+
+.item {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  transition: 0.2s;
+}
+
+.item.completed .title {
+  text-decoration: line-through;
+  color: #9ca3af;
+}
+
+.meta {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+.edit {
+  background: #52b788;
+  color: white;
+}
+
+.delete {
+  background: #c1121f;
+  color: white;
+}
+
+
+
+@media(max-width:640px){
+  .input-row{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+  <h1>To-Do Manager</h1>
+
+  
+  <div class="input-row">
+    <input id="taskInput" placeholder="Enter task">
+    <input id="dateInput" type="datetime-local">
+    <button class="add-btn" onclick="addTask()">Add Task</button>
+  </div>
+
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+    <button class="filter-btn" onclick="setFilter('active',this)">Active</button>
+    <button class="filter-btn" onclick="setFilter('done',this)">Completed</button>
+  </div>
+
+  
+  <div id="list" class="list"></div>
+</div>
+
+<script>
+
+let tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+let filter = "all";
+
+
+function save() {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
+
+function addTask() {
+  const text = taskInput.value.trim();
+  if (!text) return alert("Please enter a task");
+
+  tasks.push({
+    id: Date.now(),
+    text: text,
+    date: dateInput.value,
+    done: false
+  });
+
+  taskInput.value = "";
+  dateInput.value = "";
+  save();
+  render();
+}
+
+function render() {
+  list.innerHTML = "";
+
+  let tasksToShow = tasks.filter(t => {
+    if (filter === "active") return !t.done;
+    if (filter === "done") return t.done;
+    return true;
+  });
+
+  tasksToShow.forEach(t => {
+    const div = document.createElement("div");
+    div.className = "item" + (t.done ? " completed" : "");
+
+    div.innerHTML = `
+      <input type="checkbox" ${t.done ? "checked" : ""}>
+      <div>
+        <div class="title">${escapeHtml(t.text)}</div>
+        ${t.date ? `<div class="meta">Due: ${new Date(t.date).toLocaleString()}</div>` : ""}
+      </div>
+      <div class="actions">
+        <button class="edit">Edit</button>
+        <button class="delete">Delete</button>
+      </div>
+    `;
+
+
+    div.querySelector("input").onchange = e => {
+      t.done = e.target.checked;
+      save();
+      render();
+    };
+
+    div.querySelector(".delete").onclick = () => {
+      tasks = tasks.filter(x => x.id !== t.id);
+      save();
+      render();
+    };
+
+    div.querySelector(".edit").onclick = () => {
+      const newText = prompt("Edit task:", t.text);
+      if (newText !== null) {
+        t.text = newText.trim() || t.text;
+        save();
+        render();
+      }
+    };
+
+    list.appendChild(div);
+  });
+}
+
+
+function setFilter(f, btn) {
+  filter = f;
+  document.querySelectorAll(".filter-btn")
+    .forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  render();
+}
+
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[c]));
+}
+
+taskInput.addEventListener("keydown", event => {
+  if (event.key === "Enter") addTask();
+});
+
+
+render();
+</script>
+
+  <div style="text-align:center;color:#6b6b6b;font-size:13px;padding:10px 0;">Updated: 2026-02-16</div>
+</body>
+</html>
